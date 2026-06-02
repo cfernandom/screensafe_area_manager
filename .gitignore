@@ -43,6 +43,9 @@ bld/
 # Session artifacts (AI/agent session logs)
 session-*.md
 
+# Tool caches
+.atl/*.cache.json
+
 # Editor
 *.swp
 *.swo
