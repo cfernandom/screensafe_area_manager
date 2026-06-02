@@ -44,7 +44,7 @@ bld/
 session-*.md
 
 # Tool caches
-.atl/*.cache.json
+.atl/
 
 # Editor
 *.swp
