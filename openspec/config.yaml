@@ -1,0 +1,28 @@
+# ScreenSafe Area Manager — SDD Configuration
+# Auto-generated: 2026-06-02
+
+context: >
+  Windows utility to reserve a configurable bottom strip of the primary display,
+  compensating for defective LCD areas. .NET Framework 4.8 Console App, CLI-only MVP.
+  Target: Windows 8.1 (primary), Win 10+ compatible via fallback strategy.
+
+strict_tdd: true
+
+testing:
+  runner: dotnet test
+  framework: xUnit
+  layers:
+    unit: true
+    integration: true
+    e2e: false
+  coverage: false
+  linter: dotnet format
+
+phases:
+  proposal: { concurrency: 1, reviewers: 1 }
+  spec: { concurrency: 1, reviewers: 1 }
+  design: { concurrency: 1, reviewers: 1 }
+  tasks: { concurrency: 1, reviewers: 1 }
+  apply: { concurrency: 1, reviewers: 1 }
+  verify: { concurrency: 1, reviewers: 1 }
+  archive: { concurrency: 1, reviewers: 1 }
