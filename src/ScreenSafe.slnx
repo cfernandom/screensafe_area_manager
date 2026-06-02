@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ScreenSafe.Application/ScreenSafe.Application.csproj" />
+  <Project Path="ScreenSafe.Console/ScreenSafe.Console.csproj" />
+  <Project Path="ScreenSafe.Domain/ScreenSafe.Domain.csproj" />
+  <Project Path="ScreenSafe.Infrastructure/ScreenSafe.Infrastructure.csproj" />
+  <Project Path="ScreenSafe.Tests/ScreenSafe.Tests.csproj" />
+</Solution>
