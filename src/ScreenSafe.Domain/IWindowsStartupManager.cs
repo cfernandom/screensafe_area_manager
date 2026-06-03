@@ -23,6 +23,6 @@ namespace ScreenSafe.Domain
         /// <summary>
         /// Gets the registered command string, or null if not installed.
         /// </summary>
-        string GetRegisteredCommand();
+        string? GetRegisteredCommand();
     }
 }
