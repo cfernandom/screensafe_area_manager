@@ -93,7 +93,7 @@ public class AutoApplyServiceTests
 
         // Assert: Apply should NOT be called — bottom matches, top is irrelevant
         fx.WorkAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Never);
-        fx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("areas match, no reapply needed"))), Times.AtLeastOnce);
+        fx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("No reapply needed"))), Times.AtLeastOnce);
 
         service.Stop();
     }
@@ -126,44 +126,46 @@ public class AutoApplyServiceTests
     }
 
     // ────────────────────────────────────────────────────────────────
-    // Test: self-triggered event after Apply is suppressed
-    // Regression test: without suppression, a WorkAreaChanged triggered
-    // by our own Apply call would loop through Evaluate → Apply →
-    // WorkAreaChanged → ... indefinitely.
+    // Test: after Apply, a subsequent WorkAreaChanged converges to
+    // MATCH without reapply (comparison is correct without suppression).
     // ────────────────────────────────────────────────────────────────
 
     [Fact]
-    public void OnWorkAreaChanged_AfterApply_SuppressesNextImmediateEvent()
+    public void AfterApply_SubsequentEvent_ConvergesToMatchWithoutReapply()
     {
-        // Arrange
+        // Arrange: initial state is mismatched, Apply fixes it
         var fx = new Fixture();
         fx.WorkAreaManager.Setup(m => m.GetStatus()).Returns((0, 0, 1920, 900)); // mismatched
         fx.WorkAreaManager.Setup(m => m.Apply(It.IsAny<int>())).Returns(true);
 
         var service = fx.CreateService();
-
-        var onNextCalls = new List<Action>();
+        var callbacks = new List<Action>();
         fx.Debouncer.Setup(d => d.OnNext(It.IsAny<Action>()))
-            .Callback<Action>(cb => onNextCalls.Add(cb));
+            .Callback<Action>(cb => callbacks.Add(cb));
 
         service.Start();
 
-        // First event: fires normally, captured by debouncer
+        // First event: mismatch → Apply called
         fx.RaiseWorkAreaChanged();
-        Assert.Single(onNextCalls);
-
-        // Execute Evaluate → Apply() → sets _suppressNextWorkAreaChanged = true
-        onNextCalls[0]();
+        callbacks[0]();
         fx.WorkAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Once);
 
-        // Second event: should be suppressed — NOT reach debouncer
-        fx.RaiseWorkAreaChanged();
+        // Simulate Apply succeeded — work area now matches desired
+        fx.WorkAreaManager.Setup(m => m.GetStatus()).Returns((0, 0, 1920, 1000));
 
-        // Assert: still only 1 OnNext call (second event was suppressed)
-        Assert.Single(onNextCalls);
+        // Second event (self-triggered by Apply): should NOT call Apply again
+        fx.RaiseWorkAreaChanged();
+        callbacks[1]();
+
+        // Assert: Apply still called exactly ONCE — comparison converged to MATCH
+        fx.WorkAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Once);
 
         service.Stop();
     }
+
+    // ────────────────────────────────────────────────────────────────
+    // Test: event received → debounce → evaluate → apply when mismatch
+    // ────────────────────────────────────────────────────────────────
 
     [Fact]
     public void OnWorkAreaChanged_WhenAreaMismatch_AppliesWorkArea()
@@ -192,7 +194,7 @@ public class AutoApplyServiceTests
 
         // Assert
         fx.WorkAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.AtLeastOnce);
-        fx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Reapplying"))), Times.AtLeastOnce);
+        fx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Reapply EXECUTED"))), Times.AtLeastOnce);
 
         service.Stop();
     }
@@ -221,7 +223,7 @@ public class AutoApplyServiceTests
 
         // Assert — Apply should NOT be called
         fx.WorkAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Never);
-        fx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("areas match, no reapply needed"))), Times.AtLeastOnce);
+        fx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("No reapply needed"))), Times.AtLeastOnce);
 
         service.Stop();
     }

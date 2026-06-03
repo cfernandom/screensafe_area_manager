@@ -26,7 +26,6 @@ namespace ScreenSafe.Application
         private readonly object _stateLock = new();
         private bool _running;
         private bool _suspended;
-        private bool _suppressNextWorkAreaChanged;
         private Timer? _suspendTimer;
         private bool _disposed;
 
@@ -120,13 +119,6 @@ namespace ScreenSafe.Application
         /// </summary>
         private void OnWatcherEvent(object? sender, EventArgs e)
         {
-            if (_suppressNextWorkAreaChanged)
-            {
-                _suppressNextWorkAreaChanged = false;
-                _logger.Info("Self-triggered event suppressed after our own Apply call");
-                return;
-            }
-
             _logger.Info("Work area change event received, debouncing...");
             _debouncer.OnNext(Evaluate);
         }
@@ -160,6 +152,7 @@ namespace ScreenSafe.Application
                     return;
                 }
 
+                var screenWidth = _screenInfoProvider.GetScreenWidth();
                 var screenHeight = _screenInfoProvider.GetScreenHeight();
                 var desiredBottom = screenHeight - settings.ReservedBottomPixels;
 
@@ -167,33 +160,37 @@ namespace ScreenSafe.Application
                 // Only verify the edges we manage — top and left vary with
                 // taskbar position and are preserved by CalculateNewWorkArea.
                 var current = currentStatus.Value;
-                bool match = current.right == _screenInfoProvider.GetScreenWidth() &&
+
+                // ── Instrumentation: log both areas for diagnostics ─────────
+                _logger.Info($"Evaluate: Desired WorkArea = (0, 0, {screenWidth}, {desiredBottom})");
+                _logger.Info($"Evaluate: Current WorkArea = ({current.left}, {current.top}, {current.right}, {current.bottom})");
+
+                bool match = current.right == screenWidth &&
                              current.bottom == desiredBottom;
+
+                _logger.Info($"Evaluate: Comparison result = {(match ? "MATCH" : "MISMATCH")} " +
+                             $"(right: {current.right}=={screenWidth}?{(current.right == screenWidth ? "yes" : "no")}, " +
+                             $"bottom: {current.bottom}=={desiredBottom}?{(current.bottom == desiredBottom ? "yes" : "no")})");
 
                 if (match)
                 {
-                    _logger.Info("Current and desired areas match, no reapply needed");
+                    _logger.Info("Evaluate: No reapply needed — current area matches desired");
                     return;
                 }
+
+                _logger.Info($"Evaluate: MISMATCH detected (bottom: {current.bottom} vs {desiredBottom})");
 
                 // Mismatch detected — check circuit breaker before applying
                 if (IsCircuitBreakerOpen())
                 {
-                    _logger.Warning($"Reapply skipped — circuit breaker open ({_circuitBreakerSuspendSeconds}s suspension)");
+                    _logger.Warning($"Evaluate: Reapply SKIPPED — circuit breaker suspended ({_circuitBreakerSuspendSeconds}s)");
                     return;
                 }
 
-                _logger.Info($"Reapplying desired work area (current bottom={current.bottom}, desired bottom={desiredBottom})");
+                _logger.Info($"Evaluate: Reapply EXECUTED — setting bottom to {desiredBottom}");
 
                 // Apply the desired area (never touch OriginalWorkArea)
                 _workAreaManager.Apply(settings.ReservedBottomPixels);
-
-                // Suppress the WM_SETTINGCHANGE that our own Apply just triggered.
-                // Without this, the watcher picks up the broadcast and Evaluate
-                // runs again, potentially creating a loop when external factors
-                // (taskbar position, display changes) cause the comparison to
-                // differ from expectations.
-                _suppressNextWorkAreaChanged = true;
 
                 RecordReapply();
                 _logger.Info("Work area reapplied successfully");
