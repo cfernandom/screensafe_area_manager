@@ -42,6 +42,34 @@ See [Usage](#usage) below for all available commands.
 
 > **Note**: .NET Framework 4.8 comes pre-installed on Windows 10 v1903+. On Windows 8/8.1, install it first ([download page](https://dotnet.microsoft.com/download/dotnet-framework/net48) or [offline installer](https://support.microsoft.com/es-es/topic/instalador-sin-conexi%C3%B3n-de-microsoft-net-framework-4-8-para-windows-9d23f658-3b97-68ab-d013-aa3c3e7495e0)).
 
+### SmartScreen Notice
+
+When you run the downloaded `ScreenSafe.Console.exe`, Windows SmartScreen may show
+**"Windows protected your PC"** and block execution. This happens because the
+executable is not code-signed with an Authenticode certificate
+(certificates cost $300–500/year).
+
+**How to unblock:**
+
+1. Right-click `ScreenSafe.Console.exe` → **Properties** → check **Unblock** →
+   **Apply** → **OK**. Then run the command again.
+
+2. Or run PowerShell in the extracted folder:
+
+   ```powershell
+   Unblock-File -Path .\ScreenSafe.Console.exe
+   ```
+
+3. For a permanent fix: extract the ZIP to `C:\Program Files\ScreenSafe\` instead
+   of Downloads or Desktop. SmartScreen only flags files downloaded to user-profile
+   directories — `Program Files` is treated as a trusted location.
+
+> **Why no code signing?** ScreenSafe is a small open-source utility. An Extended
+> Validation (EV) code signing certificate from a Certificate Authority is the
+> industry standard for removing SmartScreen warnings, but it is cost-prohibitive
+> for a project at this stage. If the project grows, a certificate can be added
+> and the EXE signed with `signtool.exe`.
+
 
 ## Quick Start
 
@@ -253,7 +281,11 @@ src/
 | Daemon detection | Named mutex `Global\ScreenSafeDaemon` | Cross-process, atomic create, no extra deps |
 | Debounce | Timer-based, single-fire, 400ms default | Avoids redundant reapplies during rapid events |
 | Log rotation | 1 MB per file, 3 file retention | Prevents unbounded disk usage |
-| Window pump | `CreateWindowExW` + manual `WndProc` | No WinForms/WPF dependency, lightweight |
+| Message pump | `CreateWindowExW` + manual `WndProc` | No WinForms/WPF dependency, lightweight |
 | Circuit breaker | 10 reapplies / 60s sliding → 5 min suspend | Mitigates Win10+ Explorer override loops |
 | OriginalWorkArea | Captured once, never rewritten by daemon | Prevents daemon from corrupting the reference |
+| Window creation | Class atom via `MAKEINTATOM` + `WS_OVERLAPPED` | Avoids `ERROR_CANNOT_FIND_WND_CLASS` (1407) on Win8.1+. Overlapped windows receive system broadcasts on all Windows versions |
+| Restore state | Stateless — `Restore(ScreenRect)` | Caller provides pre-reservation area from persistent JSON. No in-memory state → no bugs across restarts |
+| Event convergence | Comparison-based (no suppression flag) | Comparing right+bottom edges converges naturally — a matching comparison produces no reapply. Self-suppression was blocking legitimate reapplies after external taskbar changes |
+| Watcher diagnostics | `ILogger` via DI factory | Diagnostic logs for window creation, message pump lifecycle, and event reception — Win32 integration failures become debuggable |
 
