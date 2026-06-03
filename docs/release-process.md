@@ -109,7 +109,7 @@ This URL works **without authentication** — ideal for downloading directly on 
 - .NET Framework 4.8 ([download page](https://dotnet.microsoft.com/download/dotnet-framework/net48) | [offline installer](https://support.microsoft.com/es-es/topic/instalador-sin-conexi%C3%B3n-de-microsoft-net-framework-4-8-para-windows-9d23f658-3b97-68ab-d013-aa3c3e7495e0))
   - Windows 10 v1903+ includes it pre-installed
   - Windows 8/8.1: requires manual installation
-```
+
 
 ## Versioning
 
