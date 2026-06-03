@@ -11,6 +11,15 @@ namespace ScreenSafe.Infrastructure
     {
         private readonly IScreenInfoProvider _screenInfoProvider;
 
+        /// <summary>
+        /// Persists the work area in the user profile without broadcasting
+        /// WM_SETTINGCHANGE. SPIF_SENDCHANGE is intentionally NOT included
+        /// because some Windows installations (OEM drivers, display utilities)
+        /// respond to the broadcast by reverting the work area, creating an
+        /// infinite reapply loop.
+        /// </summary>
+        private const uint ApplyFlags = User32.SPIF_UPDATEINIFILE;
+
         public SpSetWorkAreaStrategy(IScreenInfoProvider screenInfoProvider)
         {
             _screenInfoProvider = screenInfoProvider ?? throw new ArgumentNullException(nameof(screenInfoProvider));
@@ -30,7 +39,7 @@ namespace ScreenSafe.Infrastructure
                 User32.SPI_SETWORKAREA,
                 0,
                 ref newRect,
-                User32.SPIF_UPDATEINIFILE_AND_SENDCHANGE);
+                ApplyFlags);
         }
 
         /// <summary>
@@ -50,7 +59,7 @@ namespace ScreenSafe.Infrastructure
                 User32.SPI_SETWORKAREA,
                 0,
                 ref rect,
-                User32.SPIF_UPDATEINIFILE_AND_SENDCHANGE);
+                ApplyFlags);
         }
 
         public (int left, int top, int right, int bottom)? GetStatus()
