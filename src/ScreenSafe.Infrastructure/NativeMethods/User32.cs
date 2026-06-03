@@ -21,8 +21,14 @@ namespace ScreenSafe.Infrastructure.NativeMethods
 
         public const uint WM_SETTINGCHANGE = 0x001A;
         public const uint WM_DISPLAYCHANGE = 0x007E;
+        public const uint WM_DESTROY = 0x0002;
         public const uint WM_QUIT = 0x0012;
         public const uint WM_CLOSE = 0x0010;
+
+        // ── Window Styles ──────────────────────────────────────────────────
+
+        public const uint WS_EX_TOOLWINDOW = 0x00000080;
+        public const uint WS_POPUP = 0x80000000;
 
         // ── Window Creation ─────────────────────────────────────────────────
 
@@ -105,6 +111,20 @@ namespace ScreenSafe.Infrastructure.NativeMethods
         [DllImport("user32.dll", SetLastError = true)]
         public static extern void PostQuitMessage(int nExitCode);
 
+        /// <summary>
+        /// Posts a message to the message queue of the specified window.
+        /// </summary>
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool PostMessageW(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        /// <summary>
+        /// Destroys the specified window and sends WM_DESTROY to its window procedure.
+        /// </summary>
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DestroyWindow(IntPtr hWnd);
+
         // ── Console ─────────────────────────────────────────────────────────
 
         /// <summary>
@@ -171,7 +191,7 @@ namespace ScreenSafe.Infrastructure.NativeMethods
         public IntPtr hCursor;
         public IntPtr hbrBackground;
         [MarshalAs(UnmanagedType.LPWStr)]
-        public string lpszMenuName;
+        public string? lpszMenuName;
         [MarshalAs(UnmanagedType.LPWStr)]
         public string lpszClassName;
         public IntPtr hIconSm;
