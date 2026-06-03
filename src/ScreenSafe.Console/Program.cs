@@ -132,17 +132,11 @@ static class Program
         logger.Info("ScreenSafe daemon started successfully.");
 
         // 7. Setup Ctrl+C / Ctrl+Break for clean shutdown
-        using var shutdownEvent = new ManualResetEvent(false);
+        var shutdownEvent = new ManualResetEvent(false);
         System.Console.CancelKeyPress += (sender, e) =>
         {
             e.Cancel = true;
             logger.Info("Shutdown signal received (Ctrl+C). Stopping daemon...");
-            shutdownEvent.Set();
-        };
-
-        // Also handle WM_CLOSE via AppDomain.CurrentDomain.ProcessExit
-        AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
-        {
             shutdownEvent.Set();
         };
 
@@ -159,6 +153,11 @@ static class Program
             User32.CloseHandle(_daemonMutex);
             _daemonMutex = IntPtr.Zero;
         }
+
+        // Dispose the event AFTER cleanup is complete.
+        // Must NOT be `using` — ProcessExit fires during AppDomain unload
+        // and would crash with ObjectDisposedException on the closed handle.
+        shutdownEvent.Dispose();
 
         logger.Info("Daemon stopped.");
     }
@@ -196,7 +195,7 @@ static class Program
         services.AddSingleton<IPlatformInfoProvider, PlatformInfoProvider>();
         services.AddSingleton<ISettingsRepository>(
             _ => new JsonSettingsRepository(settingsPath));
-        services.AddSingleton<IWorkAreaWatcher, WorkAreaWatcher>();
+        services.AddSingleton<IWorkAreaWatcher>(sp => new WorkAreaWatcher(sp.GetRequiredService<ILogger>()));
         services.AddSingleton<IEventDebouncer>(sp =>
         {
             var settingsRepo = sp.GetRequiredService<ISettingsRepository>();
