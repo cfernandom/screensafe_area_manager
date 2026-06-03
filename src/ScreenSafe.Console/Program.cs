@@ -28,6 +28,13 @@ static class Program
     private const string DaemonMutexName = "Global\\ScreenSafeDaemon";
 
     /// <summary>
+    /// Determines whether the application should run in daemon mode based on CLI arguments.
+    /// Extracted for testability.
+    /// </summary>
+    internal static bool IsDaemonMode(string[] args) =>
+        args.Length > 0 && string.Equals(args[0], "--daemon", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Entry point. Routes to daemon mode or CLI mode based on the first argument.
     /// </summary>
     /// <param name="args">Command-line arguments.</param>
@@ -39,8 +46,7 @@ static class Program
             // Platform guard — only runs on Windows
             PlatformGuard.EnsureWindows();
 
-            // Check for daemon mode (must be first argument)
-            if (args.Length > 0 && string.Equals(args[0], "--daemon", StringComparison.OrdinalIgnoreCase))
+            if (IsDaemonMode(args))
             {
                 RunDaemon();
                 return 0;

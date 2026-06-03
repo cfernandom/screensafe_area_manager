@@ -16,7 +16,7 @@ Strategy:           {strategy name}
 Daemon:             {Running|Stopped}
 AutoStart:          {Enabled|Disabled}
 Last Reapply:       {ISO timestamp or N/A}
-Status:             {Healthy|Mismatch Detected}
+Status:             {OK|Mismatch Detected}
 ```
 
 #### Scenario: Health output all fields present
