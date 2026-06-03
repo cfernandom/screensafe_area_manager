@@ -48,6 +48,13 @@ namespace ScreenSafe.Infrastructure
         private static bool _classRegistered;
 
         /// <summary>
+        /// Atom returned by RegisterClassExW. Used to create windows via atom
+        /// lookup instead of string-based class name matching, avoiding
+        /// ERROR_CANNOT_FIND_WND_CLASS (1407) on some Windows versions.
+        /// </summary>
+        private static ushort _classAtom;
+
+        /// <summary>
         /// Lock for static registration.
         /// </summary>
         private static readonly object _staticLock = new();
@@ -58,9 +65,17 @@ namespace ScreenSafe.Infrastructure
 
         // ── Instance Fields ─────────────────────────────────────────────────
 
+        private readonly ILogger _logger;
         private IntPtr _hwnd;
         private Thread? _pumpThread;
         private bool _running;
+
+        // ── Constructor ───────────────────────────────────────────────────
+
+        public WorkAreaWatcher(ILogger logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
         // ── Events ──────────────────────────────────────────────────────────
 
@@ -155,20 +170,26 @@ namespace ScreenSafe.Infrastructure
                 {
                     RegisterWindowClass();
                     _classRegistered = true;
+                    _logger.Info($"WorkAreaWatcher: window class '{WindowClassName}' registered");
                 }
             }
 
-            _hwnd = CreateHiddenWindow();
+            _hwnd = CreateHiddenWindow(_classAtom);
             if (_hwnd == IntPtr.Zero)
             {
+                _logger.Error($"WorkAreaWatcher: CreateWindowExW failed. Error: {Marshal.GetLastWin32Error()}");
                 _running = false;
                 return;
             }
+
+            _logger.Info($"WorkAreaWatcher: hidden window created (hwnd=0x{_hwnd.ToInt64():X})");
 
             Instances[_hwnd] = this;
 
             // Register the TaskbarCreated message
             _taskbarCreatedMessage = User32.RegisterWindowMessageW("TaskbarCreated");
+
+            _logger.Info($"WorkAreaWatcher: message pump starting on thread {Thread.CurrentThread.ManagedThreadId}");
 
             // Message pump
             while (User32.GetMessageW(out var msg, IntPtr.Zero, 0, 0))
@@ -176,6 +197,8 @@ namespace ScreenSafe.Infrastructure
                 User32.TranslateMessage(ref msg);
                 User32.DispatchMessageW(ref msg);
             }
+
+            _logger.Info("WorkAreaWatcher: message pump stopped (WM_QUIT received)");
 
             // Cleanup after WM_QUIT
             Instances.TryRemove(_hwnd, out _);
@@ -193,7 +216,7 @@ namespace ScreenSafe.Infrastructure
                 lpfnWndProc = Marshal.GetFunctionPointerForDelegate(WndProcCallback),
                 cbClsExtra = 0,
                 cbWndExtra = 0,
-                hInstance = Marshal.GetHINSTANCE(typeof(WorkAreaWatcher).Module),
+                hInstance = User32.GetModuleHandleW(null),
                 hIcon = IntPtr.Zero,
                 hCursor = IntPtr.Zero,
                 hbrBackground = IntPtr.Zero,
@@ -208,19 +231,31 @@ namespace ScreenSafe.Infrastructure
                 throw new InvalidOperationException(
                     $"Failed to register window class. Error: {Marshal.GetLastWin32Error()}");
             }
+            _classAtom = atom;
         }
 
-        private static IntPtr CreateHiddenWindow()
+        private static IntPtr CreateHiddenWindow(ushort classAtom)
         {
+            // Pass class atom via MAKEINTATOM equivalent instead of string class name.
+            // On some Windows versions (especially 8.1 x64 with .NET Framework),
+            // CreateWindowExW with string-based class name lookup fails with
+            // ERROR_CANNOT_FIND_WND_CLASS (1407) even though RegisterClassExW
+            // succeeded. Atom-based lookup bypasses string matching and module
+            // resolution entirely.
+            var atomPtr = new IntPtr((int)classAtom);
+
+            // WS_OVERLAPPED (not WS_POPUP) is required to receive system
+            // broadcasts like WM_SETTINGCHANGE. WS_POPUP windows are not
+            // considered top-level for broadcasts on some Windows versions.
             var hwnd = User32.CreateWindowExW(
                 User32.WS_EX_TOOLWINDOW,
-                WindowClassName,
+                atomPtr,                // Class atom, not string
                 "ScreenSafe",           // Window title
-                User32.WS_POPUP,        // No caption/overlapped styles
+                User32.WS_OVERLAPPED,   // Overlapped (top-level, receives broadcasts)
                 0, 0, 0, 0,             // Position and size (irrelevant for hidden)
                 IntPtr.Zero,            // No parent
                 IntPtr.Zero,            // No menu
-                Marshal.GetHINSTANCE(typeof(WorkAreaWatcher).Module),
+                User32.GetModuleHandleW(null),
                 IntPtr.Zero);
 
             return hwnd;
@@ -249,24 +284,28 @@ namespace ScreenSafe.Infrastructure
         {
             if (msg == User32.WM_SETTINGCHANGE && (uint)wParam == User32.SPI_SETWORKAREA)
             {
+                _logger.Info($"WorkAreaWatcher: WM_SETTINGCHANGE/SPI_SETWORKAREA received");
                 WorkAreaChanged?.Invoke(this, EventArgs.Empty);
                 return IntPtr.Zero;
             }
 
             if (msg == User32.WM_DISPLAYCHANGE)
             {
+                _logger.Info($"WorkAreaWatcher: WM_DISPLAYCHANGE received");
                 DisplayChanged?.Invoke(this, EventArgs.Empty);
                 return IntPtr.Zero;
             }
 
             if (_taskbarCreatedMessage != 0 && msg == _taskbarCreatedMessage)
             {
+                _logger.Info($"WorkAreaWatcher: TaskbarCreated received");
                 ExplorerRestarted?.Invoke(this, EventArgs.Empty);
                 return IntPtr.Zero;
             }
 
             if (msg == User32.WM_DESTROY)
             {
+                _logger.Info("WorkAreaWatcher: WM_DESTROY received, posting quit");
                 User32.PostQuitMessage(0);
                 return IntPtr.Zero;
             }

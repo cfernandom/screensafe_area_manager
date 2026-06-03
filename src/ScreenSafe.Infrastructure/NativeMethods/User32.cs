@@ -28,6 +28,7 @@ namespace ScreenSafe.Infrastructure.NativeMethods
         // ── Window Styles ──────────────────────────────────────────────────
 
         public const uint WS_EX_TOOLWINDOW = 0x00000080;
+        public const uint WS_OVERLAPPED = 0x00000000;
         public const uint WS_POPUP = 0x80000000;
 
         // ── Window Creation ─────────────────────────────────────────────────
@@ -56,6 +57,25 @@ namespace ScreenSafe.Infrastructure.NativeMethods
         public static extern IntPtr CreateWindowExW(
             uint dwExStyle,
             string lpClassName,
+            string lpWindowName,
+            uint dwStyle,
+            int x, int y, int nWidth, int nHeight,
+            IntPtr hWndParent,
+            IntPtr hMenu,
+            IntPtr hInstance,
+            IntPtr lpParam);
+
+        /// <summary>
+        /// Creates an extended window using a class atom instead of a class name string.
+        /// Use this overload when lpClassName is an atom returned by RegisterClassExW,
+        /// passed via <c>new IntPtr((int)atom)</c> (MAKEINTATOM equivalent).
+        /// This bypasses string-based class lookup and is immune to encoding or
+        /// module-mismatch issues.
+        /// </summary>
+        [DllImport("user32.dll", SetLastError = true, EntryPoint = "CreateWindowExW")]
+        public static extern IntPtr CreateWindowExW(
+            uint dwExStyle,
+            IntPtr lpClassName,  // Class atom from RegisterClassExW
             string lpWindowName,
             uint dwStyle,
             int x, int y, int nWidth, int nHeight,
@@ -145,6 +165,14 @@ namespace ScreenSafe.Infrastructure.NativeMethods
         /// Hides the window and activates another window.
         /// </summary>
         public const int SW_HIDE = 0;
+
+        /// <summary>
+        /// Retrieves the module handle for the specified module. A null name
+        /// returns the handle for the main executable — the correct HINSTANCE
+        /// for registering window classes in standard Win32 apps.
+        /// </summary>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr GetModuleHandleW(string? lpModuleName);
 
         /// <summary>
         /// Detaches the calling process from its console window.

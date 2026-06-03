@@ -1,4 +1,5 @@
 using Xunit;
+using Moq;
 using ScreenSafe.Domain;
 using ScreenSafe.Infrastructure;
 using ScreenSafe.Infrastructure.NativeMethods;
@@ -12,7 +13,7 @@ namespace ScreenSafe.Tests.Infrastructure;
 /// </summary>
 public class WorkAreaWatcherTests : IDisposable
 {
-    private readonly WorkAreaWatcher _watcher = new();
+    private readonly WorkAreaWatcher _watcher = new(Mock.Of<ILogger>());
 
     public void Dispose()
     {
