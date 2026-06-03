@@ -24,5 +24,6 @@
     <ProjectReference Include="..\ScreenSafe.Domain\ScreenSafe.Domain.csproj" />
     <ProjectReference Include="..\ScreenSafe.Application\ScreenSafe.Application.csproj" />
     <ProjectReference Include="..\ScreenSafe.Infrastructure\ScreenSafe.Infrastructure.csproj" />
+    <ProjectReference Include="..\ScreenSafe.Console\ScreenSafe.Console.csproj" />
   </ItemGroup>
 </Project>
