@@ -90,8 +90,12 @@ static class Program
             return;
         }
 
-        // 2. Hide the console window
-        User32.FreeConsole();
+        // 2. Hide the console window (keep it attached for Ctrl+C support)
+        var consoleHwnd = User32.GetConsoleWindow();
+        if (consoleHwnd != IntPtr.Zero)
+        {
+            User32.ShowWindow(consoleHwnd, User32.SW_HIDE);
+        }
 
         // 3. Build service provider via shared configuration
         var serviceProvider = ConfigureServices(true);

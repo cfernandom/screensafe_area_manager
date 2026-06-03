@@ -128,7 +128,28 @@ namespace ScreenSafe.Infrastructure.NativeMethods
         // ── Console ─────────────────────────────────────────────────────────
 
         /// <summary>
+        /// Retrieves the window handle of the console associated with the calling process.
+        /// Returns IntPtr.Zero if there is no console.
+        /// </summary>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetConsoleWindow();
+
+        /// <summary>
+        /// Sets the show state of the specified window.
+        /// </summary>
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        /// <summary>
+        /// Hides the window and activates another window.
+        /// </summary>
+        public const int SW_HIDE = 0;
+
+        /// <summary>
         /// Detaches the calling process from its console window.
+        /// WARNING: detaches Ctrl+C handling — prefer ShowWindow(GetConsoleWindow(), SW_HIDE)
+        /// when you only need to hide the console without losing console control.
         /// </summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
