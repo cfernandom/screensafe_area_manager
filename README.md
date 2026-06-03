@@ -271,7 +271,7 @@ src/
 ### Technical Decisions
 
 | Decision | Choice | Rationale |
-|---|---|---|---|
+|---|---|---|
 | Runtime | .NET Framework 4.8 | Required for Windows 8.1 support |
 | P/Invoke | `[DllImport]` | `LibraryImport` is .NET 5+ |
 | JSON | System.Text.Json | Modern API, no 3rd-party dependency |
