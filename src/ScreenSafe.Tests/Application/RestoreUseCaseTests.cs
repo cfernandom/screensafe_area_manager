@@ -20,14 +20,14 @@ public class RestoreUseCaseTests
         });
 
         var workAreaManager = new Mock<IWorkAreaManager>();
-        workAreaManager.Setup(m => m.Restore()).Returns(true);
+        workAreaManager.Setup(m => m.Restore(It.IsAny<ScreenRect>())).Returns(true);
 
         var useCase = new RestoreUseCase(settingsRepo.Object, workAreaManager.Object);
 
         var result = useCase.Execute();
 
         Assert.Equal(0, result);
-        workAreaManager.Verify(m => m.Restore(), Times.Once);
+        workAreaManager.Verify(m => m.Restore(It.Is<ScreenRect>(r => r.Left == 0 && r.Top == 0 && r.Right == 1920 && r.Bottom == 1080)), Times.Once);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class RestoreUseCaseTests
         var result = useCase.Execute();
 
         Assert.NotEqual(0, result);
-        workAreaManager.Verify(m => m.Restore(), Times.Never);
+        workAreaManager.Verify(m => m.Restore(It.IsAny<ScreenRect>()), Times.Never);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class RestoreUseCaseTests
         });
 
         var workAreaManager = new Mock<IWorkAreaManager>();
-        workAreaManager.Setup(m => m.Restore()).Returns(false);
+        workAreaManager.Setup(m => m.Restore(It.IsAny<ScreenRect>())).Returns(false);
 
         var useCase = new RestoreUseCase(settingsRepo.Object, workAreaManager.Object);
 
@@ -74,7 +74,7 @@ public class RestoreUseCaseTests
         });
 
         var workAreaManager = new Mock<IWorkAreaManager>();
-        workAreaManager.Setup(m => m.Restore()).Returns(true);
+        workAreaManager.Setup(m => m.Restore(It.IsAny<ScreenRect>())).Returns(true);
 
         var useCase = new RestoreUseCase(settingsRepo.Object, workAreaManager.Object);
 

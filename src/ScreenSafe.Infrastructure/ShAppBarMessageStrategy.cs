@@ -10,7 +10,6 @@ namespace ScreenSafe.Infrastructure
     public class ShAppBarMessageStrategy : IWorkAreaManager
     {
         private readonly IScreenInfoProvider _screenInfoProvider;
-        private APPBARDATA? _originalData;
 
         public ShAppBarMessageStrategy(IScreenInfoProvider screenInfoProvider)
         {
@@ -33,20 +32,35 @@ namespace ScreenSafe.Infrastructure
             if (Shell32.SHAppBarMessage(Shell32.ABM_QUERYPOS, ref data) == IntPtr.Zero)
                 return false;
 
-            _originalData = data;
-
             var screenHeight = _screenInfoProvider.GetScreenHeight();
             data.rc.Bottom = screenHeight - reservedBottomPixels;
 
             return Shell32.SHAppBarMessage(Shell32.ABM_SETPOS, ref data) != IntPtr.Zero;
         }
 
-        public bool Restore()
+        /// <summary>
+        /// Restores the appbar position to the specified original bounds.
+        /// Stateless — the caller provides the pre-reservation area from persistent storage.
+        /// </summary>
+        public bool Restore(ScreenRect originalArea)
         {
-            if (_originalData is null)
-                return false;
+            var hWnd = Shell32.FindWindowW("Progman", null!);
+            if (hWnd == IntPtr.Zero)
+                hWnd = Shell32.FindWindowW("Shell_TrayWnd", null!);
 
-            var data = _originalData.Value;
+            var data = new APPBARDATA
+            {
+                cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(APPBARDATA)),
+                hWnd = hWnd,
+                uEdge = Shell32.ABE_BOTTOM
+            };
+
+            Shell32.SHAppBarMessage(Shell32.ABM_QUERYPOS, ref data);
+            data.rc.Left = originalArea.Left;
+            data.rc.Top = originalArea.Top;
+            data.rc.Right = originalArea.Right;
+            data.rc.Bottom = originalArea.Bottom;
+
             return Shell32.SHAppBarMessage(Shell32.ABM_SETPOS, ref data) != IntPtr.Zero;
         }
 

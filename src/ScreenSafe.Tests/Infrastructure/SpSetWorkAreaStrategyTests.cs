@@ -24,11 +24,13 @@ public class SpSetWorkAreaStrategyTests
     }
 
     [Fact]
-    public void Restore_WhenNoStoredRect_ReturnsFalse()
+    public void Restore_WithOriginalArea_DoesNotThrow()
     {
         var screenInfo = Mock.Of<IScreenInfoProvider>();
         var strategy = new SpSetWorkAreaStrategy(screenInfo);
-        var result = strategy.Restore();
+        var originalArea = new ScreenRect(0, 0, 1920, 1080);
+        // P/Invoke fails in test environment — verifies no exception on call path
+        var result = strategy.Restore(originalArea);
         Assert.False(result);
     }
 

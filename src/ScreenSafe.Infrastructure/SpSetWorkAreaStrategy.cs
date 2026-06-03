@@ -10,7 +10,6 @@ namespace ScreenSafe.Infrastructure
     public class SpSetWorkAreaStrategy : IWorkAreaManager
     {
         private readonly IScreenInfoProvider _screenInfoProvider;
-        private RECT? _originalRect;
 
         public SpSetWorkAreaStrategy(IScreenInfoProvider screenInfoProvider)
         {
@@ -24,8 +23,6 @@ namespace ScreenSafe.Infrastructure
             if (!User32.SystemParametersInfoW(User32.SPI_GETWORKAREA, 0, ref rect, 0))
                 return false;
 
-            _originalRect = rect;
-
             var screenHeight = _screenInfoProvider.GetScreenHeight();
             var newRect = CalculateNewWorkArea(rect, screenHeight, reservedBottomPixels);
 
@@ -36,12 +33,19 @@ namespace ScreenSafe.Infrastructure
                 User32.SPIF_UPDATEINIFILE_AND_SENDCHANGE);
         }
 
-        public bool Restore()
+        /// <summary>
+        /// Restores the work area to the specified original bounds using SPI_SETWORKAREA.
+        /// Stateless — the caller provides the pre-reservation work area from persistent storage.
+        /// </summary>
+        public bool Restore(ScreenRect originalArea)
         {
-            if (_originalRect is null)
-                return false;
-
-            var rect = _originalRect.Value;
+            var rect = new RECT
+            {
+                Left = originalArea.Left,
+                Top = originalArea.Top,
+                Right = originalArea.Right,
+                Bottom = originalArea.Bottom
+            };
             return User32.SystemParametersInfoW(
                 User32.SPI_SETWORKAREA,
                 0,

@@ -26,7 +26,7 @@ public class RestoreUseCase
         var settings = _settingsRepo.Load();
         if (settings.OriginalWorkArea == null) return 1;
 
-        var result = _workAreaManager.Restore();
+        var result = _workAreaManager.Restore(settings.OriginalWorkArea!.Value);
         if (!result) return 1;
 
         settings.OriginalWorkArea = null;

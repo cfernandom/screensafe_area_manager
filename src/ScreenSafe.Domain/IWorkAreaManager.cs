@@ -15,10 +15,12 @@ namespace ScreenSafe.Domain
         bool Apply(int reservedBottomPixels);
 
         /// <summary>
-        /// Restores the original full-screen work area.
+        /// Restores the work area to the specified original bounds.
+        /// The caller is responsible for providing the pre-reservation work area.
         /// </summary>
+        /// <param name="originalArea">The full-screen work area to restore.</param>
         /// <returns>True if the operation succeeded.</returns>
-        bool Restore();
+        bool Restore(ScreenRect originalArea);
 
         /// <summary>
         /// Gets the current work area bounds.

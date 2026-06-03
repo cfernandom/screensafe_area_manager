@@ -58,7 +58,7 @@ public class CliDispatcherTests
 
         Assert.Equal(0, result);
         workAreaManager.Verify(m => m.Apply(80), Times.Once);
-        workAreaManager.Verify(m => m.Restore(), Times.Never);
+        workAreaManager.Verify(m => m.Restore(It.IsAny<ScreenRect>()), Times.Never);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class CliDispatcherTests
         });
 
         var workAreaManager = new Mock<IWorkAreaManager>();
-        workAreaManager.Setup(m => m.Restore()).Returns(true);
+        workAreaManager.Setup(m => m.Restore(It.IsAny<ScreenRect>())).Returns(true);
         workAreaManager.Setup(m => m.GetStatus()).Returns((0, 0, 1920, 1080));
 
         var screenInfo = new Mock<IScreenInfoProvider>();
@@ -85,7 +85,7 @@ public class CliDispatcherTests
         var result = dispatcher.Execute(["restore"]);
 
         Assert.Equal(0, result);
-        workAreaManager.Verify(m => m.Restore(), Times.Once);
+        workAreaManager.Verify(m => m.Restore(It.IsAny<ScreenRect>()), Times.Once);
         workAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Never);
     }
 
@@ -113,7 +113,7 @@ public class CliDispatcherTests
         Assert.Equal(0, result);
         workAreaManager.Verify(m => m.GetStatus(), Times.AtLeastOnce);
         workAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Never);
-        workAreaManager.Verify(m => m.Restore(), Times.Never);
+        workAreaManager.Verify(m => m.Restore(It.IsAny<ScreenRect>()), Times.Never);
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public class CliDispatcherTests
 
         Assert.Equal(1, result);
         workAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Never);
-        workAreaManager.Verify(m => m.Restore(), Times.Never);
+        workAreaManager.Verify(m => m.Restore(It.IsAny<ScreenRect>()), Times.Never);
         workAreaManager.Verify(m => m.GetStatus(), Times.Never);
     }
 
@@ -160,7 +160,7 @@ public class CliDispatcherTests
 
         Assert.Equal(1, result);
         workAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Never);
-        workAreaManager.Verify(m => m.Restore(), Times.Never);
+        workAreaManager.Verify(m => m.Restore(It.IsAny<ScreenRect>()), Times.Never);
         workAreaManager.Verify(m => m.GetStatus(), Times.Never);
     }
 
