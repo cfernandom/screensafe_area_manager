@@ -15,10 +15,31 @@ Targets **Windows 8.1** (primary) and **Windows 10+** (compatible via dual-strat
 ## Requirements
 
 - **OS**: Windows 8.1 or later
-- **Runtime**: .NET Framework 4.8 ([included with Windows](https://dotnet.microsoft.com/download/dotnet-framework/net48))
+- **Runtime**: .NET Framework 4.8 ([download](https://dotnet.microsoft.com/download/dotnet-framework/net48))
+  - **Windows 10 v1903+**: comes pre-installed
+  - **Windows 8 / 8.1**: requires manual install — [offline installer](https://support.microsoft.com/es-es/topic/instalador-sin-conexi%C3%B3n-de-microsoft-net-framework-4-8-para-windows-9d23f658-3b97-68ab-d013-aa3c3e7495e0)
 - **Build** (optional): .NET Framework 4.8 Developer Pack, .NET SDK 8.0+ for multi-target builds
 
+## Download
+
+Grab the latest release from GitHub — no login required.
+
+1. Go to the [releases page](https://github.com/cfernandom/screensafe_area_manager/releases)
+2. Download the `ScreenSafe-v*.*.*-win81.zip` asset from the latest release
+3. Extract the ZIP anywhere on the target machine
+4. Open a terminal in the extracted folder and run:
+
+```console
+ScreenSafe.Console.exe status
+```
+
+See [Usage](#usage) below for all available commands.
+
+> **Note**: .NET Framework 4.8 comes pre-installed on Windows 10 v1903+. On Windows 8/8.1, install it first ([download page](https://dotnet.microsoft.com/download/dotnet-framework/net48) or [offline installer](https://support.microsoft.com/es-es/topic/instalador-sin-conexi%C3%B3n-de-microsoft-net-framework-4-8-para-windows-9d23f658-3b97-68ab-d013-aa3c3e7495e0)).
+
 ## Quick Start
+
+> Build from source. If you just want to run the app, see [Download](#download) above.
 
 ```console
 # Clone and build
