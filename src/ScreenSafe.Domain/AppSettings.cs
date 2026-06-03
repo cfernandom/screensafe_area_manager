@@ -25,5 +25,11 @@ namespace ScreenSafe.Domain
         /// Strategy to use: "SpSetWorkArea", "ShAppBarMessage", or "auto".
         /// </summary>
         public string Strategy { get; set; } = "auto";
+
+        /// <summary>
+        /// Directory path for log file storage.
+        /// Default: %LOCALAPPDATA%\ScreenSafe\Logs\
+        /// </summary>
+        public string LogPath { get; set; } = string.Empty;
     }
 }

@@ -41,15 +41,15 @@ Chain strategy: single-pr (size:exception accepted)
 
 ## Phase 3: Application — TDD
 
-- [ ] 3.1 **[RED]** Write `AutoApplyServiceTests` (orchestration, circuit breaker threshold/suspension) → **[GREEN]** Implement `AutoApplyService.cs`
-- [ ] 3.2 **[RED]** Write `HealthUseCaseTests` (aggregation, exit codes per spec) → **[GREEN]** Implement `HealthUseCase.cs`
-- [ ] 3.3 `dotnet test -f net48` — all app tests green
+- [x] 3.1 **[RED]** Write `AutoApplyServiceTests` (orchestration, circuit breaker threshold/suspension) → **[GREEN]** Implement `AutoApplyService.cs`
+- [x] 3.2 **[RED]** Write `HealthUseCaseTests` (aggregation, exit codes per spec) → **[GREEN]** Implement `HealthUseCase.cs`
+- [x] 3.3 `dotnet test -f net48` — all app tests green
 
 ## Phase 4: Console Integration
 
-- [ ] 4.1 Modify `Program.cs`: `--daemon` routing, shared `ConfigureServices()`, named mutex, `FreeConsole()`
-- [ ] 4.2 Modify `CliDispatcher.cs`: `install`, `uninstall`, `health` commands + health exit codes
-- [ ] 4.3 `dotnet build -f net48` + smoke test: CLI commands dispatch, daemon starts without visible window
+- [x] 4.1 Modify `Program.cs`: `--daemon` routing, shared `ConfigureServices()`, named mutex, `FreeConsole()`
+- [x] 4.2 Modify `CliDispatcher.cs`: `install`, `uninstall`, `health` commands + health exit codes
+- [x] 4.3 `dotnet build -f net48` + smoke test: CLI commands dispatch, daemon starts without visible window
 
 ## Phase 5: Build & Verify
 

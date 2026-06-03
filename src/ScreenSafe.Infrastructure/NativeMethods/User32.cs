@@ -147,6 +147,13 @@ namespace ScreenSafe.Infrastructure.NativeMethods
         /// </summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenMutexW(uint dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, string lpName);
+
+        /// <summary>
+        /// Closes an open object handle.
+        /// </summary>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseHandle(IntPtr hObject);
     }
 
     // ── Win32 Structs ──────────────────────────────────────────────────────
