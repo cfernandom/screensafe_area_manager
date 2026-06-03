@@ -68,8 +68,102 @@ public class AutoApplyServiceTests
     }
 
     // ────────────────────────────────────────────────────────────────
-    // Test: event received → debounce → evaluate → apply when mismatch
+    // Test: areas match even when taskbar is at top (top != 0)
+    // Regression test for the daemon loop bug: Evaluate() was checking
+    // top == 0, which fails when taskbar is at top/side of screen.
     // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnWorkAreaChanged_WhenTaskbarAtTop_AndBottomCorrect_MatchesCorrectly()
+    {
+        // Arrange: taskbar at top (40px), work area correctly reserved (bottom = 1000)
+        var fx = new Fixture();
+        fx.WorkAreaManager.Setup(m => m.GetStatus()).Returns((0, 40, 1920, 1000)); // top=40, bottom=1000 (correct)
+        // desiredBottom = 1080 - 80 = 1000 → matches
+
+        var service = fx.CreateService();
+        Action? capturedCallback = null;
+        fx.Debouncer.Setup(d => d.OnNext(It.IsAny<Action>()))
+            .Callback<Action>(cb => capturedCallback = cb);
+
+        // Act
+        service.Start();
+        fx.RaiseWorkAreaChanged();
+        capturedCallback!();
+
+        // Assert: Apply should NOT be called — bottom matches, top is irrelevant
+        fx.WorkAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Never);
+        fx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("areas match, no reapply needed"))), Times.AtLeastOnce);
+
+        service.Stop();
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Test: taskbar at left side (left != 0) also matches correctly
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnWorkAreaChanged_WhenTaskbarAtLeft_AndBottomCorrect_MatchesCorrectly()
+    {
+        // Arrange: taskbar at left (60px), work area correctly reserved
+        var fx = new Fixture();
+        fx.WorkAreaManager.Setup(m => m.GetStatus()).Returns((60, 0, 1920, 1000)); // left=60, bottom=1000 (correct)
+
+        var service = fx.CreateService();
+        Action? capturedCallback = null;
+        fx.Debouncer.Setup(d => d.OnNext(It.IsAny<Action>()))
+            .Callback<Action>(cb => capturedCallback = cb);
+
+        // Act
+        service.Start();
+        fx.RaiseWorkAreaChanged();
+        capturedCallback!();
+
+        // Assert: Apply should NOT be called
+        fx.WorkAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Never);
+
+        service.Stop();
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Test: self-triggered event after Apply is suppressed
+    // Regression test: without suppression, a WorkAreaChanged triggered
+    // by our own Apply call would loop through Evaluate → Apply →
+    // WorkAreaChanged → ... indefinitely.
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnWorkAreaChanged_AfterApply_SuppressesNextImmediateEvent()
+    {
+        // Arrange
+        var fx = new Fixture();
+        fx.WorkAreaManager.Setup(m => m.GetStatus()).Returns((0, 0, 1920, 900)); // mismatched
+        fx.WorkAreaManager.Setup(m => m.Apply(It.IsAny<int>())).Returns(true);
+
+        var service = fx.CreateService();
+
+        var onNextCalls = new List<Action>();
+        fx.Debouncer.Setup(d => d.OnNext(It.IsAny<Action>()))
+            .Callback<Action>(cb => onNextCalls.Add(cb));
+
+        service.Start();
+
+        // First event: fires normally, captured by debouncer
+        fx.RaiseWorkAreaChanged();
+        Assert.Single(onNextCalls);
+
+        // Execute Evaluate → Apply() → sets _suppressNextWorkAreaChanged = true
+        onNextCalls[0]();
+        fx.WorkAreaManager.Verify(m => m.Apply(It.IsAny<int>()), Times.Once);
+
+        // Second event: should be suppressed — NOT reach debouncer
+        fx.RaiseWorkAreaChanged();
+
+        // Assert: still only 1 OnNext call (second event was suppressed)
+        Assert.Single(onNextCalls);
+
+        service.Stop();
+    }
 
     [Fact]
     public void OnWorkAreaChanged_WhenAreaMismatch_AppliesWorkArea()

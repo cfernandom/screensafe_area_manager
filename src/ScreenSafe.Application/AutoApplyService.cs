@@ -26,6 +26,7 @@ namespace ScreenSafe.Application
         private readonly object _stateLock = new();
         private bool _running;
         private bool _suspended;
+        private bool _suppressNextWorkAreaChanged;
         private Timer? _suspendTimer;
         private bool _disposed;
 
@@ -119,6 +120,13 @@ namespace ScreenSafe.Application
         /// </summary>
         private void OnWatcherEvent(object? sender, EventArgs e)
         {
+            if (_suppressNextWorkAreaChanged)
+            {
+                _suppressNextWorkAreaChanged = false;
+                _logger.Info("Self-triggered event suppressed after our own Apply call");
+                return;
+            }
+
             _logger.Info("Work area change event received, debouncing...");
             _debouncer.OnNext(Evaluate);
         }
@@ -155,11 +163,11 @@ namespace ScreenSafe.Application
                 var screenHeight = _screenInfoProvider.GetScreenHeight();
                 var desiredBottom = screenHeight - settings.ReservedBottomPixels;
 
-                // Desired area: full width, reserved at bottom
+                // Desired area: full width, reserved at bottom.
+                // Only verify the edges we manage — top and left vary with
+                // taskbar position and are preserved by CalculateNewWorkArea.
                 var current = currentStatus.Value;
-                bool match = current.left == 0 &&
-                             current.top == 0 &&
-                             current.right == _screenInfoProvider.GetScreenWidth() &&
+                bool match = current.right == _screenInfoProvider.GetScreenWidth() &&
                              current.bottom == desiredBottom;
 
                 if (match)
@@ -179,6 +187,13 @@ namespace ScreenSafe.Application
 
                 // Apply the desired area (never touch OriginalWorkArea)
                 _workAreaManager.Apply(settings.ReservedBottomPixels);
+
+                // Suppress the WM_SETTINGCHANGE that our own Apply just triggered.
+                // Without this, the watcher picks up the broadcast and Evaluate
+                // runs again, potentially creating a loop when external factors
+                // (taskbar position, display changes) cause the comparison to
+                // differ from expectations.
+                _suppressNextWorkAreaChanged = true;
 
                 RecordReapply();
                 _logger.Info("Work area reapplied successfully");
