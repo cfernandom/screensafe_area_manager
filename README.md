@@ -4,6 +4,10 @@ A CLI utility for Windows that reserves a configurable strip at the bottom of th
 
 Targets **Windows 8.1** (primary) and **Windows 10+** (compatible via dual-strategy fallback). Built with .NET Framework 4.8.
 
+## Demo
+
+![ScreenSafe demo v0.2.0](assets/demo-v0.2.0.gif)
+
 ## Features
 
 - **Reserve** — trim the desktop work area by N pixels from the bottom
