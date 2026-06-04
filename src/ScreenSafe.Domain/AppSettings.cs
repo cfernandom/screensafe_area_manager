@@ -25,5 +25,17 @@ namespace ScreenSafe.Domain
         /// Strategy to use: "SpSetWorkArea", "ShAppBarMessage", or "auto".
         /// </summary>
         public string Strategy { get; set; } = "auto";
+
+        /// <summary>
+        /// Debounce interval in milliseconds for WorkAreaWatcher events.
+        /// Default: 400ms.
+        /// </summary>
+        public int EventDebounceMs { get; set; } = 400;
+
+        /// <summary>
+        /// Directory path for log file storage.
+        /// Default: %LOCALAPPDATA%\ScreenSafe\Logs\
+        /// </summary>
+        public string LogPath { get; set; } = string.Empty;
     }
 }

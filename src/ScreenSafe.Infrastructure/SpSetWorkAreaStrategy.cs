@@ -10,7 +10,15 @@ namespace ScreenSafe.Infrastructure
     public class SpSetWorkAreaStrategy : IWorkAreaManager
     {
         private readonly IScreenInfoProvider _screenInfoProvider;
-        private RECT? _originalRect;
+
+        /// <summary>
+        /// Persists the work area in the user profile without broadcasting
+        /// WM_SETTINGCHANGE. SPIF_SENDCHANGE is intentionally NOT included
+        /// because some Windows installations (OEM drivers, display utilities)
+        /// respond to the broadcast by reverting the work area, creating an
+        /// infinite reapply loop.
+        /// </summary>
+        private const uint ApplyFlags = User32.SPIF_UPDATEINIFILE;
 
         public SpSetWorkAreaStrategy(IScreenInfoProvider screenInfoProvider)
         {
@@ -24,8 +32,6 @@ namespace ScreenSafe.Infrastructure
             if (!User32.SystemParametersInfoW(User32.SPI_GETWORKAREA, 0, ref rect, 0))
                 return false;
 
-            _originalRect = rect;
-
             var screenHeight = _screenInfoProvider.GetScreenHeight();
             var newRect = CalculateNewWorkArea(rect, screenHeight, reservedBottomPixels);
 
@@ -33,20 +39,27 @@ namespace ScreenSafe.Infrastructure
                 User32.SPI_SETWORKAREA,
                 0,
                 ref newRect,
-                User32.SPIF_UPDATEINIFILE_AND_SENDCHANGE);
+                ApplyFlags);
         }
 
-        public bool Restore()
+        /// <summary>
+        /// Restores the work area to the specified original bounds using SPI_SETWORKAREA.
+        /// Stateless — the caller provides the pre-reservation work area from persistent storage.
+        /// </summary>
+        public bool Restore(ScreenRect originalArea)
         {
-            if (_originalRect is null)
-                return false;
-
-            var rect = _originalRect.Value;
+            var rect = new RECT
+            {
+                Left = originalArea.Left,
+                Top = originalArea.Top,
+                Right = originalArea.Right,
+                Bottom = originalArea.Bottom
+            };
             return User32.SystemParametersInfoW(
                 User32.SPI_SETWORKAREA,
                 0,
                 ref rect,
-                User32.SPIF_UPDATEINIFILE_AND_SENDCHANGE);
+                ApplyFlags);
         }
 
         public (int left, int top, int right, int bottom)? GetStatus()

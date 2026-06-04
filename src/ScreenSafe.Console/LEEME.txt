@@ -1,0 +1,135 @@
+================================================================================
+  ScreenSafe Area Manager — Manual de Usuario Final
+  Versión 0.2.0 (2026-06-03)
+================================================================================
+
+¿Qué es ScreenSafe?
+-------------------
+ScreenSafe reserva una franja de píxeles en la parte inferior de la pantalla
+principal. Es útil para compensar áreas defectuosas en pantallas LCD o para
+reservar espacio en sistemas kiosco / todo-en-uno.
+
+La franja reservada queda invisible para las ventanas: al maximizar una
+aplicación, esta NO ocupa los píxeles reservados. La barra de tareas de
+Windows sí puede ubicarse dentro del área reservada sin problemas.
+
+
+Requisitos
+----------
+- Windows 8.1 o posterior
+- .NET Framework 4.8 (preinstalado en Windows 10 v1903+)
+  En Windows 8/8.1, instálelo desde:
+  https://dotnet.microsoft.com/download/dotnet-framework/net48
+
+
+Primer uso — SmartScreen
+------------------------
+Al ejecutar ScreenSafe.Console.exe por primera vez, Windows SmartScreen puede
+mostrar "Windows protegió su PC" y bloquear la ejecución.
+
+Para desbloquear:
+  1. Clic derecho en ScreenSafe.Console.exe → Propiedades → marcar "Desbloquear"
+     → Aplicar → Aceptar.
+  2. O ejecute en PowerShell dentro de la carpeta:
+       Unblock-File -Path .\ScreenSafe.Console.exe
+
+Para evitar este mensaje permanentemente, extraiga el ZIP en
+C:\Program Files\ScreenSafe\ en lugar de Descargas o Escritorio.
+
+
+Comandos
+--------
+Todos los comandos se ejecutan desde una terminal (PowerShell o Símbolo del
+sistema) en la carpeta donde extrajo el ZIP.
+
+  ScreenSafe.Console.exe <comando>
+
+Comandos disponibles:
+
+  apply       Reserva los píxeles configurados en la parte inferior de la
+              pantalla. Guarda el área original para poder restaurarla después.
+
+  restore     Restaura el área de trabajo original (anula la reserva).
+
+  status      Muestra el área de trabajo actual, la resolución de pantalla
+              y si hay una reserva activa.
+
+  install     Registra ScreenSafe para iniciar automáticamente con Windows.
+              Usa la clave HKCU\...\Run del registro.
+
+  uninstall   Elimina el inicio automático.
+
+  health      Diagnóstico completo: resolución, área de trabajo, estado del
+              daemon, auto-inicio, última reaplicación.
+
+  --daemon    Modo residente. Se ejecuta en segundo plano y monitorea cambios
+              en el área de trabajo. Si Windows o un programa modifican el área
+              reservada, el daemon la reaplica automáticamente.
+              Para detenerlo: presione Ctrl+C en la terminal.
+
+Ejemplos:
+
+  Reservar 80 píxeles (configuración por defecto):
+    ScreenSafe.Console.exe apply
+
+  Restaurar la pantalla a su estado original:
+    ScreenSafe.Console.exe restore
+
+  Ver el estado actual:
+    ScreenSafe.Console.exe status
+
+  Instalar inicio automático y activar el daemon:
+    ScreenSafe.Console.exe install
+    ScreenSafe.Console.exe --daemon
+
+
+Configuración
+-------------
+El archivo appsettings.json (en la misma carpeta que el .exe) controla el
+comportamiento:
+
+  Campo                 Por defecto   Descripción
+  ─────────────────────  ────────────  ───────────────────────────────────────
+  ReservedBottomPixels   80            Píxeles a reservar en la parte inferior
+  Strategy               auto          Motor: "SpSetWorkArea" o "ShAppBarMessage"
+  EventDebounceMs        400           Tiempo (ms) entre eventos en modo daemon
+  Enabled                true          Interruptor general (false = desactiva)
+  LogPath                (vacío)       Carpeta de logs (%LOCALAPPDATA%\ScreenSafe\Logs\)
+
+Ejemplo para reservar 100 píxeles:
+  Edite appsettings.json, cambie "ReservedBottomPixels": 100, guarde, y ejecute
+  ScreenSafe.Console.exe apply
+
+
+Solución de problemas
+---------------------
+El daemon no inicia:
+  - Verifique que .NET Framework 4.8 esté instalado.
+  - Revise los logs en %LOCALAPPDATA%\ScreenSafe\Logs\
+
+Al hacer clic en ScreenSafe.Console.exe no pasa nada:
+  - Es una aplicación de línea de comandos. Ábrala desde PowerShell o
+    Símbolo del sistema, no con doble clic.
+
+El daemon se cierra solo:
+  - Solo puede haber una instancia del daemon ejecutándose. Si intenta
+    iniciar una segunda, se cierra automáticamente.
+
+
+Licencia
+--------
+GNU Affero General Public License v3.0 (AGPL-3.0).
+Vea el archivo LICENSE incluido en esta carpeta para el texto completo.
+
+Código fuente: https://github.com/cfernandom/screensafe_area_manager
+
+
+================================================================================
+  Datos de contacto
+================================================================================
+
+  Cristhian Fernando Moreno Manrique
+  cfernandomoreno.dev@gmail.com
+
+  Repositorio: https://github.com/cfernandom/screensafe_area_manager
+================================================================================
